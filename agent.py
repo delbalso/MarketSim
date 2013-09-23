@@ -1,6 +1,5 @@
 import random
 import pprint
-import goods
 
 class Collection(object):
     def __init__(self, collection):
@@ -16,9 +15,10 @@ class Collection(object):
         self.collection[good]=value;
 
     def getValue(self, good):
-        value = 0
-        if (self.collection[good]>0):
+        if (self.collection.has_key(good)):
             value = self.collection[good]
+        else:
+            value = 0
         return value
 
     def add_collection(self, collection):
@@ -37,6 +37,7 @@ class Collection(object):
             self.setValue(item, self.collection[item] + count)
         else:
             self.setValue(item, count)
+        assert(self.getValue(item)>=0)
 
 class GoodsUtility(Collection):
     HUNGRY_UTIL = {"apple":10, "orange":12, "water":2, "land":3, "clothes":1, "pear":9}
@@ -52,6 +53,14 @@ class Possessions(Collection):
     """The set of possessions and actions on a possession for an agent"""
     def __init__(self,possessions):
         super(Possessions,self).__init__(possessions)
+
+    def verifyInventoryForRemove(self, removing_set):
+        """Verify that this agent has sufficient inventory to make this trade, i.e. ensure there
+        is no negative inventory"""
+        for good, quantity in removing_set.collection.iteritems():
+            if (self.getValue(good)<quantity):
+                return False
+        return True
 
     def random_sample(self, avg_count):
         """Create a random set of possessions, average count is the number of items to expect on average"""
@@ -93,21 +102,26 @@ class Agent(object):
     def proposeTrade (self, giving_goods, receiving_goods):
         giving_value = self.appraise(giving_goods)
         receiving_value = self.appraise(receiving_goods)
-        if (receiving_value>=giving_value):
+        if (receiving_value>=giving_value and
+                self.possessions.verifyInventoryForRemove(giving_goods)):
             return True
         else:
             return False
 
-    def tradeWith(self, partner):
-        self_items=0
-        while(self_items==0):
-            self_package = self.possessions.random_sample(1);
-            self_items = self_package.count();
+    def tradeWith(self, partner, self_package=None, partner_package=None):
+        #set self_package to be random if not specified
+        if (self_package==None):
+            self_items=0
+            while(self_items==0):
+                self_package = self.possessions.random_sample(1);
+                self_items = self_package.count();
 
-        partner_items=0
-        while(partner_items==0):
-            partner_package = partner.possessions.random_sample(1);
-            partner_items = partner_package.count()
+        #set partner package to be random if not specified
+        if (partner_package==None):
+            partner_items=0
+            while(partner_items==0):
+                partner_package = partner.possessions.random_sample(1);
+                partner_items = partner_package.count()
 
         print "###self_items"
         self_package.printfull();
