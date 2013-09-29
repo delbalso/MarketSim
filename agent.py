@@ -1,8 +1,12 @@
 import random
 import pprint
 
+ALL_GOODS = ["apple", "banana", "orange", "water", "land", "clothes", "pear"]
+
 class Collection(object):
     def __init__(self, collection):
+        if (collection == None):
+            collection = dict()
         self.collection = collection
 
     def count(self):
@@ -20,6 +24,9 @@ class Collection(object):
         else:
             value = 0
         return value
+
+    def setCollection(self, collection):
+        self.collection = collection
 
     def add_collection(self, collection):
         for good, value in collection.collection.iteritems():
@@ -39,15 +46,23 @@ class Collection(object):
             self.setValue(item, count)
         assert(self.getValue(item)>=0)
 
-class GoodsUtility(Collection):
+    @staticmethod
+    def generateRandomSet():
+        randomSet = dict()
+        for good in ALL_GOODS:
+            randomSet[good] = int(random.random() * 100)
+        return randomSet
+
+class Utility(Collection):
     HUNGRY_UTIL = {"apple":10, "orange":12, "water":2, "land":3, "clothes":1, "pear":9}
     THIRSTY_UTIL = {"apple":1, "orange":2, "water":8, "land":2, "clothes":1, "pear":2}
 
+
     def remove_collection(self, collection):
-        super(GoodsUtility, self).remove_collection(self, collection, canBeNegative=True)
+        super(Utility, self).remove_collection(self, collection, canBeNegative=True)
 
     def __init__(self,util):
-        super(GoodsUtility,self).__init__(util)
+        super(Utility,self).__init__(util)
 
 class Possessions(Collection):
     """The set of possessions and actions on a possession for an agent"""
@@ -77,9 +92,20 @@ class Possessions(Collection):
 class Agent(object):
     """The basic market agent"""
 
-    def __init__(self,util):
-        self.utility = GoodsUtility(util)
-        self.possessions = Possessions(dict())
+    def __init__(self,util=None,possessions=None):
+        self.utility = Utility(util)
+        self.possessions = Possessions(possessions)
+
+    @staticmethod
+    def getTotalWealth(agents):
+        return sum (agent.getWealth() for agent in agents)
+
+    def assignRandomStats(self, possessions = None, utility = None):
+        if (possessions==None):
+            self.possessions.setCollection(Collection.generateRandomSet())
+        if (utility==None):
+            self.utility.setCollection(Collection.generateRandomSet())
+
 
     def getWealth(self):
         """This doesn't work given the new possessions class"""
@@ -92,7 +118,7 @@ class Agent(object):
             value += goods.getValue(good) * self.utility.getValue(good)
         return value
 
-    def printFull (self):
+    def printAgent (self):
         print "     Utility"
         self.utility.printfull()
         print "     Possessions"
@@ -123,35 +149,17 @@ class Agent(object):
                 partner_package = partner.possessions.random_sample(1);
                 partner_items = partner_package.count()
 
-        print "###self_items"
-        self_package.printfull();
-        print "###package_items"
-        partner_package.printfull();
-
         if (self.proposeTrade(self_package, partner_package) and partner.proposeTrade(partner_package, self_package)):
             #trade
-            print "Trading now..."
-            print "self value ", self.getWealth(), " self possessions before"
-            self.possessions.printfull()
-            print "partner wealth ", partner.getWealth(), " partner possessions before"
-            partner.possessions.printfull()
-
             self.possessions.add_collection(partner_package);
             self.possessions.remove_collection(self_package)
 
             partner.possessions.add_collection(self_package);
             partner.possessions.remove_collection(partner_package)
-            print "###TRADE###"
-            print "self value ", self.getWealth(), " self possessions after"
-            self.possessions.printfull()
-            print "partner wealth ", partner.getWealth(), " partner possessions after"
-            partner.possessions.printfull()
-            print "Trade completed"
-
             return True
 
         else:
-            """Don't Trade"""
+            #Don't Trade
             return False
         #idea here is to get a random set of possesssions from each party and compare if it would make sense for them to trade.
 
