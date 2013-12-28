@@ -1,7 +1,8 @@
 import random
+import operator
 import pprint
 
-ALL_GOODS = ["apple", "banana", "orange", "water", "land", "clothes", "pear"]
+ALL_GOODS = ["apple", "banana", "orange", "water", "land", "clothes", "money"]
 
 class Collection(object):
     def __init__(self, collection):
@@ -54,9 +55,14 @@ class Collection(object):
         return randomSet
 
 class Utility(Collection):
-    HUNGRY_UTIL = {"apple":10, "orange":12, "water":2, "land":3, "clothes":1, "pear":9}
-    THIRSTY_UTIL = {"apple":1, "orange":2, "water":8, "land":2, "clothes":1, "pear":2}
+    HUNGRY_UTIL = {"apple":10, "orange":9, "water":2, "land":3, "clothes":1, "money":1}
+    THIRSTY_UTIL = {"apple":1, "orange":2, "water":8, "land":2, "clothes":1, "money":1}
 
+    @staticmethod
+    def generateRandomSet():
+        randomSet = Collection.generateRandomSet()
+        randomSet["money"] = 1
+        return randomSet
 
     def remove_collection(self, collection):
         super(Utility, self).remove_collection(self, collection, canBeNegative=True)
@@ -104,7 +110,7 @@ class Agent(object):
         if (possessions==None):
             self.possessions.setCollection(Collection.generateRandomSet())
         if (utility==None):
-            self.utility.setCollection(Collection.generateRandomSet())
+            self.utility.setCollection(Utility.generateRandomSet())
 
 
     def getWealth(self):
@@ -119,11 +125,37 @@ class Agent(object):
         return value
 
     def printAgent (self):
+        """Prints all members of an agent"""
         print "     Utility"
         self.utility.printfull()
         print "     Possessions"
         self.possessions.printfull()
         print "\n\n"
+
+    """ For a list of goods, have self try to buy as many goods from partner as possible that are being sold for an acceptable price. Uses the partner's minimum sale price """
+    def seriesTradeHelper(self, partner, goods):
+        for good, ratio in goods:
+            if (self.utility.getValue(good)>partner.utility.getValue(good)):
+                # Try to get the maximum amount
+                number_to_buy = min((self.possessions.getValue("money")-1)/max(partner.utility.getValue(good),1), partner.possessions.getValue(good))
+                # note: this chooses the lowest price for the buyer, consider changing this to a more realisistic number
+                self_package = Collection({"money": number_to_buy*partner.utility.getValue(good)+1})
+                partner_package = Collection({ good : number_to_buy})
+
+                self.trade(partner, self_package, partner_package)
+
+
+    """ Iterate through all goods, compare utilities of each, attempt trade if there is a
+    mismatch """
+    def seriesTrade(self, partner):
+        # Create a list that holds the ratio of utility for each good for both parties (so the largest self_utility/partner_utility is first)
+        utilityRatios = dict((good,float(self.utility.getValue(good))/max(partner.utility.getValue(good),1)) for good in ALL_GOODS)
+
+        # Operate on the biggest utility mismatches first
+        goodsUtilityRatios = sorted(utilityRatios.iteritems(), key=operator.itemgetter(1), reverse=True)
+        self.seriesTradeHelper(partner, goodsUtilityRatios)
+        partner.seriesTradeHelper(self, reversed(goodsUtilityRatios))
+
 
     def proposeTrade (self, giving_goods, receiving_goods):
         giving_value = self.appraise(giving_goods)
@@ -134,21 +166,24 @@ class Agent(object):
         else:
             return False
 
-    def tradeWith(self, partner, self_package=None, partner_package=None):
+    def randomTrade(self, partner):
+        """Attempt to trade a totally random package between self and the partner"""
         #set self_package to be random if not specified
-        if (self_package==None):
-            self_items=0
-            while(self_items==0):
-                self_package = self.possessions.random_sample(1);
-                self_items = self_package.count();
+        self_items=0
+        while(self_items==0):
+            self_package = self.possessions.random_sample(1);
+            self_items = self_package.count();
 
         #set partner package to be random if not specified
-        if (partner_package==None):
-            partner_items=0
-            while(partner_items==0):
-                partner_package = partner.possessions.random_sample(1);
-                partner_items = partner_package.count()
+        partner_items=0
+        while(partner_items==0):
+            partner_package = partner.possessions.random_sample(1);
+            partner_items = partner_package.count()
 
+        return self.trade(partner, self_package, partner_package)
+
+    def trade(self, partner, self_package=None, partner_package=None):
+        """Performs a trade between two parties if it's beneficial for both"""
         if (self.proposeTrade(self_package, partner_package) and partner.proposeTrade(partner_package, self_package)):
             #trade
             self.possessions.add_collection(partner_package);
@@ -161,5 +196,4 @@ class Agent(object):
         else:
             #Don't Trade
             return False
-        #idea here is to get a random set of possesssions from each party and compare if it would make sense for them to trade.
 
