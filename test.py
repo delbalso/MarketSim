@@ -1,3 +1,5 @@
+from market import *
+from agentManage import *
 from agent import *
 
 a = Agent(Utility.HUNGRY_UTIL)
@@ -56,13 +58,11 @@ for good in ALL_GOODS:
     assert not b.utility.collection.has_key(good), "Good incorrectly  assigned by random stats"
     assert b.possessions.getValue(good) > 0 and b.possessions.getValue(good) < 100, "Invalid quantity in  utility"
 
-print "random sample"
-sample = a.possessions.random_sample(1)
-sample.printfull()
 
-print "a"
-a.printAgent()
-
-print "printing b"
-b.printAgent()
+""" Ensure right number of rounds in seriesTrade """
+random.seed(1337)
+agents = createAndPopulateRandomAgents(5)
+roundsTraded = runSetOfTradeRounds(agents,tradeUntilComplete=True)
+assert roundsTraded==32, "Incorrect number of trade rounds in seriesTrade"
+assert agents[0].possessions.collection["apple"]==129, "Incorrect inventory after seriesTrades"
 

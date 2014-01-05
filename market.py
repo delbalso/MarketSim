@@ -1,5 +1,6 @@
 from itertools import *
 from agent import *
+from agentManage import *
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -36,29 +37,29 @@ def runSetOfTradeRounds(agents, numRounds=1, tradeUntilComplete=False):
             newTotalWealth = sum(agent.getWealth() for agent in agents)
             complete = (newTotalWealth - oldTotalWealth < 1)
         roundsTraded += 1
+    return roundsTraded
 
 def vprint (verbosity, message):
     if (__VERBOSE__>=verbosity):
         print message
 
 def __main__():
-    #make a few agents
-    agents=list()
-    for i in xrange(15):
-        agents.append(Agent())
-        agents[i].assignRandomStats()
+    """for i in xrange (100):
+        # Make a few agents
+        agents=createAndPopulateRandomAgents(15)
 
-    #print current stats
-    print list(agent.getWealth() for agent in agents)
-    print "Total wealth: ", Agent.getTotalWealth(agents)
+        #print current stats
+        #print list(agent.getWealth() for agent in agents)
+        #print "Total wealth: ", Agent.getTotalWealth(agents)
 
-    #trade a bit
-    beginning_wealth = Agent.getTotalWealth(agents)
-    runSetOfTradeRounds(agents, tradeUntilComplete=True)
-    end_wealth = Agent.getTotalWealth(agents)
-    print "Total wealth: ", end_wealth
-    print "up ", 100*(float(end_wealth)/beginning_wealth-1), "%"
-
+        #trade a bit
+        beginning_wealth = Agent.getTotalWealth(agents)
+        roundsTraded = runSetOfTradeRounds(agents, tradeUntilComplete=True)
+        end_wealth = Agent.getTotalWealth(agents)
+        #print "Total wealth: ", end_wealth
+        wealthIncrease =  100*(float(end_wealth)/beginning_wealth-1)
+        print roundsTraded, " - ", wealthIncrease,"%"
+"""
 
 
 
