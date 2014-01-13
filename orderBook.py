@@ -6,12 +6,12 @@ from bintrees import RBTree
 
 @functools.total_ordering
 class Order:
-    def __init__(self, agent, price, quantity, orderType="bid"):
+    def __init__(self, agent, price, quantity, orderType="bid", time=time.time()):
         assert price>=0, "Order can't have a negative price"
         self.agent = agent
         self.price = price
         self.quantity = quantity
-        self.orderTime = time.time()
+        self.orderTime = time
         self.orderType = orderType
         self.ID = uuid.uuid4()
 
@@ -43,6 +43,20 @@ class OrderBook:
         self.book = RBTree()
         self.orderType = "bid"
 
+    def getBest(self):
+        if len(self)==0:
+            return None
+        if self.orderType=="bid":
+            return self.book.max_key()
+        else:
+            return self.book.min_key()
+
+    def getNext(self, order):
+        if self.orderType=="bid":
+            return self.book.prev_key(order)
+        else:
+            return self.book.next_key(order)
+
     def addOrder(self, order):
         assert order.orderType==self.orderType, "Tried to add incorrect type of order to book"
         self.book[order] = True
@@ -54,12 +68,21 @@ class OrderBook:
     def printBook(self):
         for item in self.book.keys():
             item.printOrder()
-            print "-------"
+            print "-----------------------------"
 
     """ Can this order book provide the other side of order's trade, return orders that will meet it
         return tuple (quantity, list of orders) """
-    def canMeet(self, order):
-        pass
+    def canMeet(self, orderToMatch):
+        assert orderToMatch.orderType!=self.orderType, "Tried to meet incorrect order type"
+        quantity=0
+        for order in self.book.keys(reverse=(self.orderType=="bid")):
+            if quantity >= orderToMatch.quantity:
+                break
+            if ((order.price < orderToMatch.price and self.orderType=="bid") or
+                    (order.price > orderToMatch.price and self.orderType=="ask")):
+                break
+            quantity += order.quantity
+        return (quantity >= orderToMatch.quantity)
 
 class Exchange:
     def __init__(self):
@@ -76,5 +99,9 @@ class Exchange:
          """
         pass
 
-
+    def trade(self, order):
+        books = self.bids if order.orderType()=="ask" else self.asks
+        #Collect matching orders
+        quantity=0
+        pass
 
