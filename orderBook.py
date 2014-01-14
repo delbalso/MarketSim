@@ -1,4 +1,5 @@
 import uuid
+import copy
 import time
 import functools
 from bintrees import RBTree
@@ -6,6 +7,13 @@ from bintrees import RBTree
 
 @functools.total_ordering
 class Order:
+    @classmethod
+    def fromOrder(self,order, quantity=None):
+        newOrder = copy.copy(order)
+        if quantity!=None:
+            newOrder.quantity = quantity
+        return newOrder
+
     def __init__(self, agent, price, quantity, orderType="bid", time=time.time()):
         assert price>=0, "Order can't have a negative price"
         self.agent = agent
@@ -41,7 +49,7 @@ class Order:
 class OrderBook:
     def __init__(self,orderType="bid"):
         self.book = RBTree()
-        self.orderType = "bid"
+        self.orderType = orderType
 
     def getBest(self):
         if len(self)==0:
@@ -50,6 +58,9 @@ class OrderBook:
             return self.book.max_key()
         else:
             return self.book.min_key()
+
+    def removeOrder(self, order):
+        return self.book.discard(order)
 
     def getNext(self, order):
         if self.orderType=="bid":
@@ -73,8 +84,10 @@ class OrderBook:
     """ Can this order book provide the other side of order's trade, return orders that will meet it
         return tuple (quantity, list of orders) """
     def canMeet(self, orderToMatch):
-        assert orderToMatch.orderType!=self.orderType, "Tried to meet incorrect order type"
+        assert orderToMatch.orderType!=self.orderType, "Tried to meet incorrect order type "+orderToMatch.orderType
         quantity=0
+        orders=[]
+        canMeet = None # represents whether this orderbook can meet the order
         for order in self.book.keys(reverse=(self.orderType=="bid")):
             if quantity >= orderToMatch.quantity:
                 break
@@ -82,26 +95,18 @@ class OrderBook:
                     (order.price > orderToMatch.price and self.orderType=="ask")):
                 break
             quantity += order.quantity
-        return (quantity >= orderToMatch.quantity)
-
-class Exchange:
-    def __init__(self):
-        self.bids = OrderBook(orderType="bid")
-        self.asks = OrderBook(orderType="ask")
-
-    def addOrder(self, order):
-        """
-        4 cases
-         1) order is not met, just add it
-         2) order is partiall met, some of the is fulfilled
-         3) order is fully met, partially fultills order on the other side
-         4) order is fully met on both sides (maybe including multiple orders)
-         """
-        pass
-
-    def trade(self, order):
-        books = self.bids if order.orderType()=="ask" else self.asks
-        #Collect matching orders
-        quantity=0
-        pass
+            if quantity > orderToMatch.quantity:
+                quantityToKeep = quantity - orderToMatch.quantity
+            else:
+                quantityToKeep = order.quantity
+            orders.append(order)
+        if (quantity == orderToMatch.quantity):
+            canMeet = "full" # Orders fit perfectly into this orderToMatch's quantity
+        elif (quantity >= orderToMatch.quantity):
+            canMeet = "full-split" # Order fit orderToMatch, but last order needs to be split
+        elif quantity >0:
+            canMeet = "partial" # Only part of OrderToMatch could be filled
+        else:
+            canMeet = "nofill" # No order matched orderToMatch
+        return canMeet, orders
 
