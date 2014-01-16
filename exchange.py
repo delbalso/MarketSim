@@ -1,4 +1,4 @@
-from orderBook import *
+from orderBook import Order, OrderBook
 
 class Exchange:
     def __init__(self):
@@ -9,15 +9,21 @@ class Exchange:
         for order in orders:
             self.addOrder(order)
 
+    """ Given an orderType/bookType string, return this exchange's corresponding book.
+    Return the opposing book if reverse set to True """
     def getBook(self, bookType, reverse=False):
+        assert bookType in ["ask","bid"], "Tried to add incorrect type of order to book"
         if ((bookType == "ask") != reverse):
             return self.asks
         else:
             return self.bids
+
+    """ Place an order on the exchange. If the order can be met, perform whatever trades needed to
+        meet the order """
     def addOrder(self, order):
         """
         4 cases
-         1) order is not met, just add it
+         1) order is not met at all, just add it
          2) order is partiall met, some of the is fulfilled
          3) order is fully met, partially fultills order on the other side
          4) order is fully met on both sides (maybe including multiple orders)
@@ -40,7 +46,6 @@ class Exchange:
                     order2InBook = True
                 elif order.quantity < matchingOrder.quantity:
                     order1 = order
-                    print "HERE"
                     order2 = Order.fromOrder(matchingOrder, quantity=order.quantity)
                     matchingOrder.quantity -= order.quantity
                     order2InBook = False
@@ -50,10 +55,16 @@ class Exchange:
             destinationBook.addOrder(order)
 
 
-    """ Executes a trade. Some trades can be already stored in a book, one will always be new. order1 is always the new order and order2 can be already in a book or not depending on the order2InBook param """
+    """ Executes a trade. Some trades can be already stored in a book, one will always be new. order1 is always the new order and order2 can be already in a book or not depending on the order2InBook param. order2.quantity should never exceed order1.quantity """
     def trade(self, order1, order2, order2InBook=True):
         if order2InBook:
-            print "HEERE"
             order2Book = self.getBook(order2.orderType)
             order2Book.removeOrder(order2)
+        order1.quantity -= order2.quantity
 
+    """ Print the current state of the exchange """
+    def printBooks(self):
+        print "*** Asks ***"
+        self.asks.printBook()
+        print "*** Bids ***"
+        self.bids.printBook()

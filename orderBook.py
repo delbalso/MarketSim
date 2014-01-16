@@ -25,7 +25,8 @@ class Order:
 
     def __eq__(self, other):
         if (self.orderTime == other.orderTime and
-                self.price == other.price):
+                self.price == other.price and
+                self.ID == other.ID):
             return True
         return False
 
@@ -52,7 +53,7 @@ class OrderBook:
         self.orderType = orderType
 
     def getBest(self):
-        if len(self)==0:
+        if len(self.book)==0:
             return None
         if self.orderType=="bid":
             return self.book.max_key()
@@ -66,7 +67,7 @@ class OrderBook:
         if self.orderType=="bid":
             return self.book.prev_key(order)
         else:
-            return self.book.next_key(order)
+            return self.book.succ_key(order)
 
     def addOrder(self, order):
         assert order.orderType==self.orderType, "Tried to add incorrect type of order to book"

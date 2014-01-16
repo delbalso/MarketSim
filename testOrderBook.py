@@ -1,6 +1,7 @@
 from orderBook import *
 import unittest
 
+
 class TestOrderBook(unittest.TestCase):
 
     def setUp(self):
@@ -18,6 +19,28 @@ class TestOrderBook(unittest.TestCase):
             self.assertTrue(sampleOrder in self.book.book)
         # self.book.printBook()
 
+    def test_complexAddOffer(self):
+        self.book.addOrder(Order("Agent D", 100, 1))
+        self.book.addOrder(Order("Agent E", 100, 1))
+        self.assertTrue(len(self.book.book)==2)
+
+    def test_getBestBid(self):
+        self.book.addOrders(list(self.sampleOrders.values()))
+        self.assertTrue(self.book.getBest() == self.sampleOrders[2])
+        self.assertTrue(self.book.getNext(self.sampleOrders[2]) == self.sampleOrders[3])
+        self.assertTrue(self.book.getNext(self.sampleOrders[3]) == self.sampleOrders[1])
+        self.assertTrue(self.book.getNext(self.sampleOrders[1]) == self.sampleOrders[0])
+
+    def test_getBestAsk(self):
+        self.book.orderType = "ask"
+        for index in self.sampleOrders.keys():
+            self.sampleOrders[index].orderType = "ask"
+        self.book.addOrders(list(self.sampleOrders.values()))
+        self.assertTrue(self.book.getBest() == self.sampleOrders[0])
+        self.assertTrue(self.book.getNext(self.sampleOrders[0]) == self.sampleOrders[3])
+        self.assertTrue(self.book.getNext(self.sampleOrders[3]) == self.sampleOrders[1])
+        self.assertTrue(self.book.getNext(self.sampleOrders[1]) == self.sampleOrders[2])
+
     def test_bidOrder(self):
         self.book.addOrders(list(self.sampleOrders.values()))
         orders = list(self.book.book.keys())
@@ -25,7 +48,6 @@ class TestOrderBook(unittest.TestCase):
         self.assertTrue(orders[1] is self.sampleOrders[1])
         self.assertTrue(orders[2] is self.sampleOrders[3])
         self.assertTrue(orders[3] is self.sampleOrders[2])
-
 
     def test_askOrder(self):
         self.book.orderType="ask"
@@ -45,7 +67,7 @@ class TestOrderBook(unittest.TestCase):
         newOrder = Order("Agent A", 100, 3, orderType="ask")
         self.assertTrue(self.book.canMeet(newOrder)[0]=="full-split")
         newOrder = Order("Agent A", 300, 6, orderType="ask")
-        self.assertTrue(self.book.canMeet(newOrder)[0]=="full")
+        self.assertTrue(self.book.canMeet(newOrder)[0] == "full")
 
         """ Enough inventory but not at that price """
         newOrder = Order("Agent A", 300, 7, orderType="ask")

@@ -18,16 +18,62 @@ class TestExchange(unittest.TestCase):
             self.assertTrue(sampleOrder in self.exchange.bids.book)
             self.assertFalse(sampleOrder in self.exchange.asks.book)
 
-    def test_askorder1(self):
+    def test_simpleAddBidOffer(self):
+        for index in self.sampleOrders.keys():
+            self.sampleOrders[index].orderType = "ask"
+        self.exchange.addOrders(list(self.sampleOrders.values()))
+        order = Order("Agent D", 100, 1, orderType="bid")
+        self.exchange.addOrder(order)
+        self.assertFalse(self.sampleOrders[0] in self.exchange.asks.book)
+        self.assertTrue(self.sampleOrders[1] in self.exchange.asks.book)
+        self.assertTrue(self.sampleOrders[2] in self.exchange.asks.book)
+        self.assertTrue(self.sampleOrders[3] in self.exchange.asks.book)
+        self.assertTrue(self.exchange.bids.book.is_empty())
+
+    def test_simpleAddAskOffer(self):
         self.exchange.addOrders(list(self.sampleOrders.values()))
         order = Order("Agent D", 300, 6, orderType="ask")
         self.exchange.addOrder(order)
-        # check that all added orders a present
         self.assertTrue(self.sampleOrders[0] in self.exchange.bids.book)
         self.assertTrue(self.sampleOrders[1] in self.exchange.bids.book)
         self.assertFalse(self.sampleOrders[2] in self.exchange.bids.book)
         self.assertTrue(self.sampleOrders[3] in self.exchange.bids.book)
+        self.assertTrue(self.exchange.asks.book.is_empty())
         # self.book.printBook()
+
+    def test_NoFill(self):
+        self.sampleOrders[2].orderType = "ask"
+        self.exchange.addOrders(list(self.sampleOrders.values()))
+        #self.exchange.printBooks()
+        self.assertTrue(self.sampleOrders[1] in self.exchange.bids.book)
+        self.assertTrue(self.sampleOrders[3] in self.exchange.bids.book)
+        self.assertTrue(self.sampleOrders[0] in self.exchange.bids.book)
+        self.assertTrue(self.sampleOrders[2] in self.exchange.asks.book)
+
+    def test_FullOrder(self):
+        self.exchange.addOrder(Order("Agent D", 100, 1, orderType="ask"))
+        self.exchange.addOrder(Order("Agent E", 100, 1, orderType="ask"))
+        self.exchange.addOrder(Order("Agent D", 100, 2, orderType="bid"))
+        self.assertTrue(self.exchange.asks.book.is_empty())
+        self.assertTrue(self.exchange.bids.book.is_empty())
+
+    def test_PartialOrder(self):
+        self.exchange.addOrder(Order("Agent D", 100, 10, orderType="ask"))
+        self.exchange.addOrder(Order("Agent D", 100, 15, orderType="bid"))
+        self.assertTrue(self.exchange.bids.book.__len__()==1)
+        self.assertTrue(self.exchange.bids.getBest().quantity == 5)
+        self.assertTrue(self.exchange.bids.getBest().price == 100)
+        self.assertTrue(self.exchange.asks.book.is_empty())
+
+    def test_FullSplitOrder(self):
+        self.exchange.addOrder(Order("Agent D", 100, 10, orderType="ask"))
+        self.exchange.addOrder(Order("Agent E", 100, 10, orderType="ask"))
+        self.exchange.addOrder(Order("Agent D", 100, 15, orderType="bid"))
+        self.assertTrue(self.exchange.asks.book.__len__()==1)
+        self.assertTrue(self.exchange.asks.getBest().quantity == 5)
+        self.assertTrue(self.exchange.asks.getBest().price == 100)
+        self.assertTrue(self.exchange.bids.book.is_empty())
+
 """
     def test_bidOrder(self):
         self.book.addOrders(list(self.sampleOrders.values()))
