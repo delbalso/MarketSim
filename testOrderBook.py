@@ -5,12 +5,12 @@ import unittest
 class TestOrderBook(unittest.TestCase):
 
     def setUp(self):
-        self.book = OrderBook()
+        self.book = OrderBook("apple")
         self.sampleOrders = {}
-        self.sampleOrders[0] = Order("Agent A", 100, 1, time=1)
-        self.sampleOrders[1] = Order("Agent B", 150, 3, time=4)
-        self.sampleOrders[2]= Order("Agent C", 300, 6, time=1)
-        self.sampleOrders[3]= Order("Agent D", 150, 5, time=1)
+        self.sampleOrders[0] = Order("Agent A", "apple", 100, 1, time=1)
+        self.sampleOrders[1] = Order("Agent B", "apple", 150, 3, time=4)
+        self.sampleOrders[2]= Order("Agent C", "apple", 300, 6, time=1)
+        self.sampleOrders[3]= Order("Agent D", "apple", 150, 5, time=1)
 
     def test_insert(self):
         self.book.addOrders(list(self.sampleOrders.values()))
@@ -20,8 +20,8 @@ class TestOrderBook(unittest.TestCase):
         # self.book.printBook()
 
     def test_complexAddOffer(self):
-        self.book.addOrder(Order("Agent D", 100, 1))
-        self.book.addOrder(Order("Agent E", 100, 1))
+        self.book.addOrder(Order("Agent D", "apple", 100, 1))
+        self.book.addOrder(Order("Agent E", "apple", 100, 1))
         self.assertTrue(len(self.book.book)==2)
 
     def test_getBestBid(self):
@@ -64,21 +64,21 @@ class TestOrderBook(unittest.TestCase):
         self.book.addOrders(list(self.sampleOrders.values()))
 
         """ Good Trade """
-        newOrder = Order("Agent A", 100, 3, orderType="ask")
+        newOrder = Order("Agent A", "apple", 100, 3, orderType="ask")
         self.assertTrue(self.book.canMeet(newOrder)[0]=="full-split")
-        newOrder = Order("Agent A", 300, 6, orderType="ask")
+        newOrder = Order("Agent A", "apple", 300, 6, orderType="ask")
         self.assertTrue(self.book.canMeet(newOrder)[0] == "full")
 
         """ Enough inventory but not at that price """
-        newOrder = Order("Agent A", 300, 7, orderType="ask")
+        newOrder = Order("Agent A", "apple", 300, 7, orderType="ask")
         self.assertTrue(self.book.canMeet(newOrder)[0]=="partial")
 
         """ No bids at that price """
-        newOrder = Order("Agent A", 1000, 3, orderType="ask")
+        newOrder = Order("Agent A", "apple", 1000, 3, orderType="ask")
         self.assertTrue(self.book.canMeet(newOrder)[0]=="nofill")
 
         """ Not enough inventory to meet order """
-        newOrder = Order("Agent A", 1, 3000, orderType="ask")
+        newOrder = Order("Agent A", "apple", 1, 3000, orderType="ask")
         self.assertTrue(self.book.canMeet(newOrder)[0]=="partial")
 
 
