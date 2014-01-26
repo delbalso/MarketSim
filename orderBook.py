@@ -14,10 +14,11 @@ class Order:
             newOrder.quantity = quantity
         return newOrder
 
-    def __init__(self, agent, price, quantity, orderType="bid", time=time.time()):
+    def __init__(self, agent, good, price, quantity, orderType="bid", time=time.time()):
         assert price>=0, "Order can't have a negative price"
         self.agent = agent
         self.price = price
+        self.good = good
         self.quantity = quantity
         self.orderTime = time
         self.orderType = orderType
@@ -48,9 +49,10 @@ class Order:
         print "orderTime: "+ str(self.orderTime)
 
 class OrderBook:
-    def __init__(self,orderType="bid"):
+    def __init__(self, good, orderType="bid"):
         self.book = RBTree()
         self.orderType = orderType
+        self.good = good
 
     def getBest(self):
         if len(self.book)==0:
