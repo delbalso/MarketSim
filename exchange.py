@@ -1,6 +1,9 @@
 from orderBook import Order, OrderBook
+from loggingSetup import *
+
 
 class Exchange:
+
     def __init__(self, good):
         self.good = good
         self.bids = OrderBook(good, orderType="bid")
@@ -8,8 +11,10 @@ class Exchange:
 
     """ Given an orderType/bookType string, return this exchange's corresponding book.
     Return the opposing book if reverse set to True """
+
     def getBook(self, bookType, reverse=False):
-        assert bookType in ["ask","bid"], "Tried to add incorrect type of order to book"
+        assert bookType in [
+            "ask", "bid"], "Tried to add incorrect type of order to book"
         if ((bookType == "ask") != reverse):
             return self.asks
         else:
@@ -19,67 +24,92 @@ class Exchange:
         exchange. It is intended for cases where Exchange is being used as a member of Agent to
         track that Agent's orders on another Exchange. Similar behavior exsits for
         removeOrdeNoMatch() """
-    def addOrderNoMatch(self, order):
-        destinationBook = self.getBook(order.orderType) # The book to which this order is intended
-        destinationBook.addOrder(order)
 
+    """    def addOrderNoMatch(self, order):
+        # The book to which this order is intended
+        destinationBook = self.getBook(order.orderType)
+        destinationBook.addOrder(order)
+    """
     """ See comment for addOrderNoMatch() """
+    """
     def removeOrderNoMatch(self, order):
-        destinationBook = self.getBook(order.orderType) # The book to which this order is intended
+        # The book to which this order is intended
+        destinationBook = self.getBook(order.orderType)
         destinationBook.removeOrder(order)
+    """
 
     def addOrders(self, orders):
         for order in orders:
             self.addOrder(order)
-
     """ Place an order on the exchange. If the order can be met, perform whatever trades needed to
         meet the order """
+
     def addOrder(self, order):
-        """
-        4 cases
-         1) order is not met at all, just add it
-         2) order is partiall met, some of the is fulfilled
-         3) order is fully met, partially fultills order on the other side
-         4) order is fully met on both sides (maybe including multiple orders)
-         """
-        destinationBook = self.getBook(order.orderType) # The book to which this order is intended to be added
-        matchingBook = self.getBook(order.orderType, reverse=True) # The book that would hold orders that would match order
-        canMeetOrder, matchingOrders = matchingBook.canMeet(order)
+        logging.debug("addOrder. id: " + str(order.agent.id) + ", good: " + order.good + ", orderType: " +
+                      order.orderType + ", price: " + str(order.price) + ", quantity: " + str(order.quantity))
+        assert order.good == self.good, "Tried to add the incorrect type of good"
+        # We don't want an exchange for money
+        assert order.good != "money", "Tried to add an order for money"
+        # The book to which this order is intended to be added
+        destinationBook = self.getBook(order.orderType)
+        destinationBook.addOrder(order)
 
-        if canMeetOrder in ["full", "full-split", "partial"]:
-            for matchingOrder in matchingOrders:
-                if order.quantity > matchingOrder.quantity:
-                    # Split off a child order to match the size of the first matching order
-                    order1 = Order.fromOrder(order, quantity=matchingOrder.quantity)
-                    order2 = matchingOrder
-                    order.quantity -= matchingOrder.quantity
-                    order2InBook = True
-                elif order.quantity == matchingOrder.quantity:
-                    order1 = order
-                    order2 = matchingOrder
-                    order2InBook = True
-                elif order.quantity < matchingOrder.quantity:
-                    order1 = order
-                    order2 = Order.fromOrder(matchingOrder, quantity=order.quantity)
-                    matchingOrder.quantity -= order.quantity
-                    order2InBook = False
+        tradeOccurred = self.settle()
+        unsettled = tradeOccurred
+        while unsettled == True:
+            unsettled = self.settle()
 
-                self.trade(order1, order2, order2InBook=order2InBook)
-        if order.quantity > 0:
-            destinationBook.addOrder(order)
+        return tradeOccurred
 
+    """ settle executes any possible trades given the exchange's orderbooks. It recursively calls itself until all possible trades are made """
 
-    """ Executes a trade. Some trades can be already stored in a book, one will always be new. order1 is always the new order and order2 can be already in a book or not depending on the order2InBook param. order2.quantity should never exceed order1.quantity """
-    def trade(self, order1, order2, order2InBook=True):
-        assert order1.good == order2.good, "Tried to trade orders for mismatching goods: " + str(order1.good) + " and " + str(order2.good)
-        if order2InBook:
-            order2Book = self.getBook(order2.orderType)
-            order2Book.removeOrder(order2)
-        order1.quantity -= order2.quantity
-        order1.agent.tradeCompleted(order1, order2, order1.good)
-        order2.agent.tradeCompleted(order2, order1, order1.good)
+    def settle(self):
+        bestAsk = self.asks.getBest()
+        bestBid = self.bids.getBest()
+
+        if bestAsk == None or bestBid == None:
+            return False
+
+        quantity = 0  # How much is being traded
+        if bestAsk.price <= bestBid.price:  # Should a trade occur?
+            if bestAsk.quantity < bestBid.quantity:
+                # also covers the case of bid and ask having equal quantities
+                quantity = bestAsk.quantity
+            else:
+                quantity = bestBid.quantity
+
+            # This uses the halfway point between the bid and the ask as the
+            # price, this may not be exactly what is needed. We may want to use
+            # the best price for the new incoming order. (i.e. if incoming
+            # order is a bid, use best ask price, and vice versa)
+            price = (bestAsk.price + bestBid.price) / 2
+
+            # TODO: Add tests to ensure that the agent is solvent
+            assert (
+                quantity <= bestAsk.quantity and quantity <= bestBid.quantity)
+            # This is a partial execution of this order
+            if quantity < bestAsk.quantity:
+                bestAsk.quantity = bestAsk.quantity - quantity
+            else:  # The quantity is the exact size of the order
+                self.asks.removeOrder(bestAsk)
+            # This is a partial execution of this order
+            if quantity < bestBid.quantity:
+                bestBid.quantity = bestBid.quantity - quantity
+            else:  # The quantity is the exact size of the order
+                self.bids.removeOrder(bestBid)
+
+            logging.debug("Trade: " + str(bestAsk.agent.id) + " --> " + str(bestBid.agent.id) + ", for good: " + self.good +
+                          ", price: " + str(price) + ", quantity: " + str(quantity) + ", money exchanged = " + str(price * quantity))
+            bestAsk.agent.removeInv(self.good, quantity)
+            bestBid.agent.removeInv("money", quantity * price)
+            bestAsk.agent.addInv("money", quantity * price)
+            bestBid.agent.addInv(self.good, quantity)
+            return True
+        else:
+            return False
 
     """ Print the current state of the exchange """
+
     def printBooks(self):
         print "*** Asks ***"
         self.asks.printBook()
@@ -88,13 +118,15 @@ class Exchange:
 
 ALL_GOODS = ["apple", "banana", "orange", "water", "land", "clothes", "money"]
 
+
 class Exchanges:
+
     def __init__(self):
         self.exchanges = {}
         for good in ALL_GOODS:
             self.exchanges[good] = Exchange(good)
 
     def getExchange(self, good):
-        assert self.exchanges.has_key(good), "Tried to retreive exchange \""+good+"\" that doesn't exist"
+        assert self.exchanges.has_key(
+            good), "Tried to retreive exchange \"" + good + "\" that doesn't exist"
         return self.exchanges[good]
-

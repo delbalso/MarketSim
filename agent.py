@@ -2,6 +2,7 @@ from orderBook import OrderBook, Order
 from exchange import Exchange, Exchanges
 import random
 import operator
+import uuid
 import pprint
 
 
@@ -9,8 +10,9 @@ class Collection(object):
     def __init__(self, collection):
         if (collection == None):
             collection = dict()
-        self.collection = collection
+        self.collection = dict(collection)
 
+    """ Count returns the number of items in the collection """
     def count(self):
         return sum(self.collection.values())
 
@@ -27,10 +29,12 @@ class Collection(object):
             value = 0
         return value
 
+    """ addCollection adds all the contents to one collection to another """
     def addCollection(self, collection):
         for good, value in collection.collection.iteritems():
             self.addItem(good, value)
 
+    """ removeCollection removes all the contents of one collection from another. This function will crash with an error if you try to remove more of an item than the collection already contains unless canBeNegative is true. """ 
     def removeCollection(self, collection, canBeNegative=False):
         for good, value in collection.collection.iteritems():
             self.addItem(good, -1*value)
@@ -76,6 +80,7 @@ class Agent(object):
         self.utility = Utility(util)
         self.inventory = Inventory(inventory)
         self.exchanges = exchanges
+        self.id = uuid.uuid4()
 
     @staticmethod
     def getTotalWealth(agents):
@@ -112,8 +117,8 @@ class Agent(object):
         true """
     def addInv (self, good, quantity, addToExchange=True):
         self.inventory.addItem(good, quantity)
-        if addToExchange:
-            order = Order(self, good, self.getUtility(good), quantity, orderType="ask")
+        if addToExchange and good!="money":
+            order = Order(self, good, self.getUtility(good)+1, quantity, orderType="ask")
             self.exchanges.getExchange(good).addOrder(order)
 
     def removeInv(self, good, quantity):

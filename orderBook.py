@@ -2,12 +2,13 @@ import uuid
 import copy
 import time
 import functools
+from loggingSetup import *
 from bintrees import RBTree
 # https://pypi.python.org/pypi/bintrees
 
+
 @functools.total_ordering
 class Order:
-    @classmethod
     def fromOrder(self,order, quantity=None):
         newOrder = copy.copy(order)
         if quantity!=None:
@@ -25,6 +26,8 @@ class Order:
         self.ID = uuid.uuid4()
 
     def __eq__(self, other):
+        if other == None:
+            return False
         if (self.orderTime == other.orderTime and
                 self.price == other.price and
                 self.ID == other.ID):
@@ -54,6 +57,7 @@ class OrderBook:
         self.orderType = orderType
         self.good = good
 
+    """ getBest return the most competitive order in the book. This means the highest bid or the lowest ask """
     def getBest(self):
         if len(self.book)==0:
             return None
@@ -84,7 +88,7 @@ class OrderBook:
             item.printOrder()
             print "-----------------------------"
 
-    """ Can this order book provide the other side of order's trade, return orders that will meet it
+    """ canMeet returns whether or not this order book can match any orders to orderToMatch, return orders that will meet it
         return tuple (quantity, list of orders) """
     def canMeet(self, orderToMatch):
         assert orderToMatch.orderType!=self.orderType, "Tried to meet incorrect order type "+orderToMatch.orderType

@@ -15,8 +15,8 @@ def generateRandUtility():
     randomSet["money"] = 1
     return randomSet
 
+""" random_sample returns a random sample of an inventory set.  avg_count is the number of items to expect on average"""
 def random_sample(set, avg_count):
-    """Create a random set of inventory, average count is the number of items to expect on average"""
     sample = inventory(dict());
     for good in set.collection:
         for item in xrange(set.collection[good]):
@@ -26,6 +26,7 @@ def random_sample(set, avg_count):
                 sample.addItem(good)
     return sample
 
+""" generateRandomSet generates a set of random goods in random quantities """
 def generateRandomSet():
     randomSet = dict()
     for good in ALL_GOODS:
