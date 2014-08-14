@@ -40,12 +40,18 @@ class Collection(object):
             self.setValue(item, self.collection[item] + delta)
         else:
             self.setValue(item, delta)
+            
+
+    """ empty removes all items from the collection """
+    def empty(self):
+        for good in self.collection.keys():
+            self.collection[good]=0
 
     """ addCollection adds all the contents to one collection to another """
 
     def addCollection(self, collection):
-        for good, value in collection.collection.iteritems():
-            self.addItem(good, value)
+        for good, value in collection.iteritems():
+            self.modifyValue(good, value)
 
     """ removeCollection removes all the contents of one collection from another. This function will crash with an error if you try to remove more of an item than the collection already contains unless canBeNegative is true. """
 
@@ -115,9 +121,9 @@ class Agent(object):
     def getUtility(self, good):
         return self.utility.getValue(good)
 
-    """ getInventory returns the number of 'good' in self's inventory """
+    """ getInv returns the number of 'good' in self's inventory """
 
-    def getInventory(self, good):
+    def getInv(self, good):
         return self.inventory.getValue(good)
 
     """ addInv adds a good to the agent's inventory. It also adds the order to the the
@@ -138,7 +144,7 @@ class Agent(object):
         if quantity < 0:
             raise InventoryException(
                 "Tried to remove a negative quantity of " + good)
-        if quantity > self.getInventory(good):
+        if quantity > self.getInv(good):
             raise InventoryException(
                 "Tried to remove more " + good + " than user has")
         self.inventory.modifyValue(good, -1 * quantity) # quantity is positive, but need delta to be negative

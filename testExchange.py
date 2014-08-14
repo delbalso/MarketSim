@@ -38,22 +38,22 @@ class TestExchange(unittest.TestCase):
         self.sampleOrders[3] = Order(self.fakeAgents[3], "apple", 150, 5, time=1)
 
     def test_agentsInventoryAffectedByTrade(self):
-        askOrder = Order(self.realAgent2, "apple",  self.realAgent2.getUtility("apple")+1, self.realAgent2.getInventory("apple"), orderType="ask")
+        askOrder = Order(self.realAgent2, "apple",  self.realAgent2.getUtility("apple")+1, self.realAgent2.getInv("apple"), orderType="ask")
         bidOrder = Order(self.realAgent1, "apple", self.realAgent1.getUtility("apple"), 10, orderType="bid")
 
-        self.assertTrue(self.realAgent2.getInventory("apple")==1)
-        self.assertTrue(self.realAgent2.getInventory("money")==0)
-        self.assertTrue(self.realAgent1.getInventory("apple")==0)
-        self.assertTrue(self.realAgent1.getInventory("money")==100)
+        self.assertTrue(self.realAgent2.getInv("apple")==1)
+        self.assertTrue(self.realAgent2.getInv("money")==0)
+        self.assertTrue(self.realAgent1.getInv("apple")==0)
+        self.assertTrue(self.realAgent1.getInv("money")==100)
 
         appleExchange = self.exchanges.getExchange("apple")
         appleExchange.addOrder(askOrder)
         appleExchange.addOrder(bidOrder)
 
-        self.assertTrue(self.realAgent2.getInventory("apple")==0)
-        self.assertTrue(self.realAgent2.getInventory("money")==6)
-        self.assertTrue(self.realAgent1.getInventory("apple")==1)
-        self.assertTrue(self.realAgent1.getInventory("money")==94)
+        self.assertTrue(self.realAgent2.getInv("apple")==0)
+        self.assertTrue(self.realAgent2.getInv("money")==6)
+        self.assertTrue(self.realAgent1.getInv("apple")==1)
+        self.assertTrue(self.realAgent1.getInv("money")==94)
         
 
     def test_add(self):
@@ -76,7 +76,6 @@ class TestExchange(unittest.TestCase):
         self.assertTrue(self.exchange.bids.book.is_empty())
 
     def test_simpleAddMatchedAskOffer(self):
-        print "test"
         self.exchange.addOrders(list(self.sampleOrders.values()))
         order = Order(self.fakeAgents[3], "apple", 300, 6, orderType="ask")
         self.exchange.addOrder(order)
@@ -89,7 +88,6 @@ class TestExchange(unittest.TestCase):
     def test_NoFill(self):
         self.sampleOrders[2].orderType = "ask"
         self.exchange.addOrders(list(self.sampleOrders.values()))
-        #self.exchange.printBooks()
         self.assertTrue(self.sampleOrders[1] in self.exchange.bids.book)
         self.assertTrue(self.sampleOrders[3] in self.exchange.bids.book)
         self.assertTrue(self.sampleOrders[0] in self.exchange.bids.book)
