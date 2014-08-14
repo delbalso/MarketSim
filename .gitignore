@@ -38,4 +38,7 @@ Thumbs.db
 
 
 *.pyc
-
+*.un~
+*.swp
+*.swn
+*.swo

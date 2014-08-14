@@ -69,6 +69,7 @@ class OrderBook:
     def removeOrder(self, order):
         return self.book.discard(order)
 
+    """ getNext returns the next order to be executed (as determined by price and time) """
     def getNext(self, order):
         if self.orderType=="bid":
             return self.book.prev_key(order)

@@ -38,7 +38,29 @@ class TestAgent(unittest.TestCase):
         exchanges = Exchanges()
         self.a = Agent(exchanges)
         self.b = Agent (exchanges)
+        self.a.utility.collection = HUNGRY_UTIL
+        self.b.utility.collection = THIRSTY_UTIL
 
+    def test_getWealthAndGetTotalWealth(self):
+        self.a.addInv("orange",5)
+        self.a.addInv("orange",5)
+        self.a.addInv("apple",5)
+        self.assertTrue(self.a.getWealth() == 140)
+
+        self.b.addInv("money",5)
+        self.assertTrue(self.b.getWealth() == 5)
+
+        self.assertTrue(Agent.getTotalWealth([self.a, self.b]) == 145)
+
+
+    def test_errorWhenRemovingTooMany(self):
+        self.a.addInv("orange",5)
+        self.assertRaises(InventoryException, self.a.removeInv,"orange",6)
+
+    def test_errorWhenAddingOrRemovingNegativeQuantities(self):
+        self.assertRaises(InventoryException, self.a.removeInv,"orange",-6)
+        self.assertRaises(InventoryException, self.a.addInv,"orange",-6)
+        
     def test_simpleAddAndRemove(self):
         self.a.addInv("orange",5)
         self.a.addInv("orange",5)

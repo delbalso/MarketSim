@@ -20,24 +20,6 @@ class Exchange:
         else:
             return self.bids
 
-    """ addOrderNoMatch is used to add an order when it shouldn't be matched to an order on this
-        exchange. It is intended for cases where Exchange is being used as a member of Agent to
-        track that Agent's orders on another Exchange. Similar behavior exsits for
-        removeOrdeNoMatch() """
-
-    """    def addOrderNoMatch(self, order):
-        # The book to which this order is intended
-        destinationBook = self.getBook(order.orderType)
-        destinationBook.addOrder(order)
-    """
-    """ See comment for addOrderNoMatch() """
-    """
-    def removeOrderNoMatch(self, order):
-        # The book to which this order is intended
-        destinationBook = self.getBook(order.orderType)
-        destinationBook.removeOrder(order)
-    """
-
     def addOrders(self, orders):
         for order in orders:
             self.addOrder(order)
@@ -100,6 +82,8 @@ class Exchange:
 
             logging.debug("Trade: " + str(bestAsk.agent.id) + " --> " + str(bestBid.agent.id) + ", for good: " + self.good +
                           ", price: " + str(price) + ", quantity: " + str(quantity) + ", money exchanged = " + str(price * quantity))
+
+            # Adjust the participating agent's inventories
             bestAsk.agent.removeInv(self.good, quantity)
             bestBid.agent.removeInv("money", quantity * price)
             bestAsk.agent.addInv("money", quantity * price)

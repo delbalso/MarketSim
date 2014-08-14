@@ -12,7 +12,7 @@ class TestOrderBook(unittest.TestCase):
         self.sampleOrders[2]= Order("Agent C", "apple", 300, 6, time=1)
         self.sampleOrders[3]= Order("Agent D", "apple", 150, 5, time=1)
 
-    def test_insert(self):
+    def test_addOrders(self):
         self.book.addOrders(list(self.sampleOrders.values()))
         for sampleOrder in self.sampleOrders.values():
             # check that all added orders a present
@@ -24,14 +24,14 @@ class TestOrderBook(unittest.TestCase):
         self.book.addOrder(Order("Agent E", "apple", 100, 1))
         self.assertTrue(len(self.book.book)==2)
 
-    def test_getBestBid(self):
+    def test_getBestAndOrderSequenceForBids(self):
         self.book.addOrders(list(self.sampleOrders.values()))
         self.assertTrue(self.book.getBest() == self.sampleOrders[2])
         self.assertTrue(self.book.getNext(self.sampleOrders[2]) == self.sampleOrders[3])
         self.assertTrue(self.book.getNext(self.sampleOrders[3]) == self.sampleOrders[1])
         self.assertTrue(self.book.getNext(self.sampleOrders[1]) == self.sampleOrders[0])
 
-    def test_getBestAsk(self):
+    def test_getBestAndOrderSequenceForAsks(self):
         self.book.orderType = "ask"
         for index in self.sampleOrders.keys():
             self.sampleOrders[index].orderType = "ask"
@@ -40,25 +40,6 @@ class TestOrderBook(unittest.TestCase):
         self.assertTrue(self.book.getNext(self.sampleOrders[0]) == self.sampleOrders[3])
         self.assertTrue(self.book.getNext(self.sampleOrders[3]) == self.sampleOrders[1])
         self.assertTrue(self.book.getNext(self.sampleOrders[1]) == self.sampleOrders[2])
-
-    def test_bidOrder(self):
-        self.book.addOrders(list(self.sampleOrders.values()))
-        orders = list(self.book.book.keys())
-        self.assertTrue(orders[0] is self.sampleOrders[0])
-        self.assertTrue(orders[1] is self.sampleOrders[1])
-        self.assertTrue(orders[2] is self.sampleOrders[3])
-        self.assertTrue(orders[3] is self.sampleOrders[2])
-
-    def test_askOrder(self):
-        self.book.orderType="ask"
-        for index in self.sampleOrders.keys():
-            self.sampleOrders[index].orderType = "ask"
-        self.book.addOrders(list(self.sampleOrders.values()))
-        orders = list(self.book.book.keys())
-        self.assertTrue(orders[0] is self.sampleOrders[0])
-        self.assertTrue(orders[1] is self.sampleOrders[3])
-        self.assertTrue(orders[2] is self.sampleOrders[1])
-        self.assertTrue(orders[3] is self.sampleOrders[2])
 
     def test_canMeet(self):
         self.book.addOrders(list(self.sampleOrders.values()))
