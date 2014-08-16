@@ -1,3 +1,4 @@
+from loggingSetup import *
 from orderBook import OrderBook, Order
 from exchange import Exchange, Exchanges
 import random
@@ -22,6 +23,11 @@ class Collection(object):
     def count(self):
         return sum(self.collection.values())
 
+    """ goods returns the list of all the goods in the collection """
+
+    def goods(self):
+        return self.collection.keys()
+
     def printFull(self):
         pprint.pprint(vars(self), indent=5)
 
@@ -40,12 +46,12 @@ class Collection(object):
             self.setValue(item, self.collection[item] + delta)
         else:
             self.setValue(item, delta)
-            
 
     """ empty removes all items from the collection """
+
     def empty(self):
         for good in self.collection.keys():
-            self.collection[good]=0
+            self.collection[good] = 0
 
     """ addCollection adds all the contents to one collection to another """
 
@@ -63,9 +69,10 @@ class Collection(object):
 
     """ modifyValue increments/decrements the quantity of item by delta """
 
+
 class Utility(Collection):
 
-    def __init__(self, util):
+    def __init__(self, util=None):
         super(Utility, self).__init__(util)
 
 """The set of inventory and actions on a possession for an agent"""
@@ -73,10 +80,11 @@ class Utility(Collection):
 
 class Inventory(Collection):
 
-    def __init__(self, inventory):
+    def __init__(self, inventory=None):
         super(Inventory, self).__init__(inventory)
 
     """ VerifyInventoryForRemove that this agent has sufficient inventory to make this trade, i.e. ensure there is no negative inventory"""
+
     def verifyInventoryForRemove(self, removing_set):
         for good, quantity in removing_set.collection.iteritems():
             if (self.getValue(good) < quantity):
@@ -88,11 +96,14 @@ class Agent(object):
 
     """ Agent is basic market actor """
 
-    def __init__(self, exchanges, util=None, inventory=None):
-        self.utility = Utility(util)
-        self.inventory = Inventory(inventory)
+    def __init__(self, exchanges=None, utility=None, inventory=None):
         self.exchanges = exchanges
         self.id = uuid.uuid4()
+        self.utility = Utility(utility)
+        self.inventory = Inventory()
+        if inventory != None:
+            for good in inventory.goods():
+                self.addInv(good, inventory.getValue(good))
 
     @staticmethod
     def getTotalWealth(agents):
@@ -118,6 +129,31 @@ class Agent(object):
         self.inventory.printFull()
         print "\n\n"
 
+    """ introduceExchanges gives the agent access to a new exchanges and puts the agents goods for sale on its exchanges """
+
+    def introduceExchanges(self, exchanges):
+        if self.exchanges != None:  # can only have one set of exchanges
+            self.removeExchanges(self.exchanges)
+        self.exchanges = exchanges
+        for good in self.inventory.goods():
+            exchange = self.exchanges.getExchange(good)
+            orderToAdd = Order(
+                self, good, self.getUtility(good), self.getInv(good))
+            self.exchange.addOrder(orderToAdd)
+
+    """ removeExchanges makes an agent no longer able to access those exchanges and removes all of the agent's orders from those exchanges """
+
+    def removeExchanges(self, exchanges):
+        if (self.exchanges != exchanges):
+            # Assumes Agent can only access one exchanges
+            logging.warning(
+                "Tried to remove an exchange from an agent that does not have access to this exchange")
+        for exchange in exchanges.exchanges.values():
+            logging.debug(
+                "Removing orders for an agent from " + exchange.good + " exchange")
+            exchange.removeAllAgentOrders(self)
+        self.exchanges = None
+
     def getUtility(self, good):
         return self.utility.getValue(good)
 
@@ -135,10 +171,12 @@ class Agent(object):
             raise InventoryException(
                 "Tried to add a negative quantity of " + good)
         self.inventory.modifyValue(good, quantity)
-        if addToExchange and good != "money":
-            order = Order(
-                self, good, self.getUtility(good) + 1, quantity, orderType="ask")
-            self.exchanges.getExchange(good).addOrder(order)
+        if addToExchange and good != "money" and self.exchanges != None:
+            exchange = self.exchanges.getExchange(good)
+            if exchange != None:
+                order = Order(
+                    self, good, self.getUtility(good) + 1, quantity, orderType="ask")
+                exchange.addOrder(order)
 
     def removeInv(self, good, quantity):
         if quantity < 0:
@@ -147,4 +185,5 @@ class Agent(object):
         if quantity > self.getInv(good):
             raise InventoryException(
                 "Tried to remove more " + good + " than user has")
-        self.inventory.modifyValue(good, -1 * quantity) # quantity is positive, but need delta to be negative
+        # quantity is positive, but need delta to be negative
+        self.inventory.modifyValue(good, -1 * quantity)

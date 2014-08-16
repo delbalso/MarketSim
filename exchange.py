@@ -20,6 +20,9 @@ class Exchange:
         else:
             return self.bids
 
+    def isEmpty(self):
+        return self.bids.size() == 0 and self.asks.size() == 0
+
     def addOrders(self, orders):
         for order in orders:
             self.addOrder(order)
@@ -27,7 +30,7 @@ class Exchange:
         meet the order """
 
     def addOrder(self, order):
-        logging.debug("addOrder. id: " + str(order.agent.id) + ", good: " + order.good + ", orderType: " +
+        logging.debug("Exchange.addOrder. id: " + str(order.agent.id) + ", good: " + order.good + ", orderType: " +
                       order.orderType + ", price: " + str(order.price) + ", quantity: " + str(order.quantity))
         assert order.good == self.good, "Tried to add the incorrect type of good"
         # We don't want an exchange for money
@@ -42,6 +45,13 @@ class Exchange:
             unsettled = self.settle()
 
         return tradeOccurred
+
+    """ removeAllAgentOrders deletes all orders from agent from this exchange """
+
+    def removeAllAgentOrders(self, agent):
+        self.asks.removeAllAgentOrders(agent)
+        self.bids.removeAllAgentOrders(agent)
+        self.settle()
 
     """ settle executes any possible trades given the exchange's orderbooks. It recursively calls itself until all possible trades are made """
 
@@ -111,6 +121,14 @@ class Exchanges:
             self.exchanges[good] = Exchange(good)
 
     def getExchange(self, good):
-        assert self.exchanges.has_key(
-            good), "Tried to retreive exchange \"" + good + "\" that doesn't exist"
+        if not self.exchanges.has_key(good):
+            return None
         return self.exchanges[good]
+
+    """ goodsTraded returns a list of all goods traded by all the markets in this group of exchanges """
+
+    def goodsTraded(self):
+        goods = []
+        for exchange in self.exchanges:
+            goods.append(exchange.good)
+        return goods

@@ -9,14 +9,15 @@ from bintrees import RBTree
 
 @functools.total_ordering
 class Order:
-    def fromOrder(self,order, quantity=None):
+
+    def fromOrder(self, order, quantity=None):
         newOrder = copy.copy(order)
-        if quantity!=None:
+        if quantity != None:
             newOrder.quantity = quantity
         return newOrder
 
     def __init__(self, agent, good, price, quantity, orderType="bid", time=time.time()):
-        assert price>=0, "Order can't have a negative price"
+        assert price >= 0, "Order can't have a negative price"
         self.agent = agent
         self.price = price
         self.good = good
@@ -38,46 +39,57 @@ class Order:
         if self.price < other.price:
             return True
         if self.price == other.price:
-            if (self.orderType =="bid" and self.orderTime > other.orderTime):
+            if (self.orderType == "bid" and self.orderTime > other.orderTime):
                 return True
-            if (self.orderType =="ask" and self.orderTime < other.orderTime):
+            if (self.orderType == "ask" and self.orderTime < other.orderTime):
                 return True
         return False
 
     def printOrder(self):
         print "agent: " + str(self.agent)
-        print "price: "+ str(self.price)
-        print "quantity: "+ str(self.quantity)
-        print "orderType: "+ str(self.orderType)
-        print "orderTime: "+ str(self.orderTime)
+        print "price: " + str(self.price)
+        print "quantity: " + str(self.quantity)
+        print "orderType: " + str(self.orderType)
+        print "orderTime: " + str(self.orderTime)
+
 
 class OrderBook:
+
     def __init__(self, good, orderType="bid"):
         self.book = RBTree()
         self.orderType = orderType
         self.good = good
 
     """ getBest return the most competitive order in the book. This means the highest bid or the lowest ask """
+
     def getBest(self):
-        if len(self.book)==0:
+        if len(self.book) == 0:
             return None
-        if self.orderType=="bid":
+        if self.orderType == "bid":
             return self.book.max_key()
         else:
             return self.book.min_key()
+
+    """ removeAllAgentOrders deletes all orders associated with this agent from this book """
+
+    def removeAllAgentOrders(self, agent):
+        for order in self.book:
+            if order.agent == agent:
+                self.removeOrder(order)
 
     def removeOrder(self, order):
         return self.book.discard(order)
 
     """ getNext returns the next order to be executed (as determined by price and time) """
+
     def getNext(self, order):
-        if self.orderType=="bid":
+        if self.orderType == "bid":
             return self.book.prev_key(order)
         else:
             return self.book.succ_key(order)
 
     def addOrder(self, order):
-        assert order.orderType==self.orderType, "Tried to add incorrect type of order to book"
+        assert order.orderType == self.orderType, "Tried to add incorrect type of order to book"
         self.book[order] = True
 
     def addOrders(self, orders):
@@ -89,18 +101,23 @@ class OrderBook:
             item.printOrder()
             print "-----------------------------"
 
+    def size(self):
+        return len(self.book)
+
     """ canMeet returns whether or not this order book can match any orders to orderToMatch, return orders that will meet it
         return tuple (quantity, list of orders) """
+
     def canMeet(self, orderToMatch):
-        assert orderToMatch.orderType!=self.orderType, "Tried to meet incorrect order type "+orderToMatch.orderType
-        quantity=0
-        orders=[]
-        canMeet = None # represents whether this orderbook can meet the order
-        for order in self.book.keys(reverse=(self.orderType=="bid")):
+        assert orderToMatch.orderType != self.orderType, "Tried to meet incorrect order type " + \
+            orderToMatch.orderType
+        quantity = 0
+        orders = []
+        canMeet = None  # represents whether this orderbook can meet the order
+        for order in self.book.keys(reverse=(self.orderType == "bid")):
             if quantity >= orderToMatch.quantity:
                 break
-            if ((order.price < orderToMatch.price and self.orderType=="bid") or
-                    (order.price > orderToMatch.price and self.orderType=="ask")):
+            if ((order.price < orderToMatch.price and self.orderType == "bid") or
+                    (order.price > orderToMatch.price and self.orderType == "ask")):
                 break
             quantity += order.quantity
             if quantity > orderToMatch.quantity:
@@ -109,12 +126,13 @@ class OrderBook:
                 quantityToKeep = order.quantity
             orders.append(order)
         if (quantity == orderToMatch.quantity):
-            canMeet = "full" # Orders fit perfectly into this orderToMatch's quantity
+            # Orders fit perfectly into this orderToMatch's quantity
+            canMeet = "full"
         elif (quantity >= orderToMatch.quantity):
-            canMeet = "full-split" # Order fit orderToMatch, but last order needs to be split
-        elif quantity >0:
-            canMeet = "partial" # Only part of OrderToMatch could be filled
+            # Order fit orderToMatch, but last order needs to be split
+            canMeet = "full-split"
+        elif quantity > 0:
+            canMeet = "partial"  # Only part of OrderToMatch could be filled
         else:
-            canMeet = "nofill" # No order matched orderToMatch
+            canMeet = "nofill"  # No order matched orderToMatch
         return canMeet, orders
-
