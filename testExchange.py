@@ -11,7 +11,7 @@ class FakeAgent:
 
     def __init__(self):
         self.id = 0
-        self.exchanges = None
+        self.exchange = None
 
     def tradeCompleted(self, order1, order2, good):
         pass
@@ -23,18 +23,18 @@ class FakeAgent:
         pass
 
 
-class TestExchange(unittest.TestCase):
+class TestMarket(unittest.TestCase):
 
     def setUp(self):
-        self.exchange = Exchange("apple")
+        self.market = Market("apple")
         self.sampleOrders = {}
         self.fakeAgents = {}
-        self.exchanges = Exchanges()
+        self.exchange = Exchange()
 
         self.realAgent1 = Agent(
-            self.exchanges, utility=HUNGRY_UTIL, inventory=Inventory({"money": 100}))
+            self.exchange, utility=HUNGRY_UTIL, inventory=Inventory({"money": 100}))
         self.realAgent2 = Agent(
-            self.exchanges, utility=THIRSTY_UTIL, inventory=Inventory({"apple": 1}))
+            self.exchange, utility=THIRSTY_UTIL, inventory=Inventory({"apple": 1}))
         self.fakeAgents[0] = FakeAgent()
         self.fakeAgents[1] = FakeAgent()
         self.fakeAgents[2] = FakeAgent()
@@ -58,8 +58,8 @@ class TestExchange(unittest.TestCase):
         self.assertTrue(self.realAgent1.getInv("apple") == 0)
         self.assertTrue(self.realAgent1.getInv("money") == 100)
 
-        appleExchange = self.exchanges.getExchange("apple")
-        appleExchange.addOrder(bidOrder)
+        appleMarket = self.exchange.getMarket("apple")
+        appleMarket.addOrder(bidOrder)
 
         self.assertTrue(self.realAgent2.getInv("apple") == 0)
         self.assertTrue(self.realAgent2.getInv("money") == 6)
@@ -67,87 +67,87 @@ class TestExchange(unittest.TestCase):
         self.assertTrue(self.realAgent1.getInv("money") == 94)
 
     def test_add(self):
-        self.exchange.addOrders(list(self.sampleOrders.values()))
+        self.market.addOrders(list(self.sampleOrders.values()))
         for sampleOrder in self.sampleOrders.values():
             # check that all added orders are present
-            self.assertTrue(sampleOrder in self.exchange.bids.book)
-            self.assertFalse(sampleOrder in self.exchange.asks.book)
+            self.assertTrue(sampleOrder in self.market.bids.book)
+            self.assertFalse(sampleOrder in self.market.asks.book)
 
     def test_simpleAddMatchedBidOffer(self):
         for index in self.sampleOrders.keys():
             self.sampleOrders[index].orderType = "ask"
-        self.exchange.addOrders(list(self.sampleOrders.values()))
+        self.market.addOrders(list(self.sampleOrders.values()))
         order = Order(self.fakeAgents[3], "apple",  100, 1, orderType="bid")
-        self.exchange.addOrder(order)
-        self.assertFalse(self.sampleOrders[0] in self.exchange.asks.book)
-        self.assertTrue(self.sampleOrders[1] in self.exchange.asks.book)
-        self.assertTrue(self.sampleOrders[2] in self.exchange.asks.book)
-        self.assertTrue(self.sampleOrders[3] in self.exchange.asks.book)
-        self.assertTrue(self.exchange.bids.book.is_empty())
+        self.market.addOrder(order)
+        self.assertFalse(self.sampleOrders[0] in self.market.asks.book)
+        self.assertTrue(self.sampleOrders[1] in self.market.asks.book)
+        self.assertTrue(self.sampleOrders[2] in self.market.asks.book)
+        self.assertTrue(self.sampleOrders[3] in self.market.asks.book)
+        self.assertTrue(self.market.bids.book.is_empty())
 
     def test_simpleAddMatchedAskOffer(self):
-        self.exchange.addOrders(list(self.sampleOrders.values()))
+        self.market.addOrders(list(self.sampleOrders.values()))
         order = Order(self.fakeAgents[3], "apple", 300, 6, orderType="ask")
-        self.exchange.addOrder(order)
-        self.assertTrue(self.sampleOrders[0] in self.exchange.bids.book)
-        self.assertTrue(self.sampleOrders[1] in self.exchange.bids.book)
-        self.assertFalse(self.sampleOrders[2] in self.exchange.bids.book)
-        self.assertTrue(self.sampleOrders[3] in self.exchange.bids.book)
-        self.assertTrue(self.exchange.asks.book.is_empty())
+        self.market.addOrder(order)
+        self.assertTrue(self.sampleOrders[0] in self.market.bids.book)
+        self.assertTrue(self.sampleOrders[1] in self.market.bids.book)
+        self.assertFalse(self.sampleOrders[2] in self.market.bids.book)
+        self.assertTrue(self.sampleOrders[3] in self.market.bids.book)
+        self.assertTrue(self.market.asks.book.is_empty())
 
     def test_NoFill(self):
         self.sampleOrders[2].orderType = "ask"
-        self.exchange.addOrders(list(self.sampleOrders.values()))
-        self.assertTrue(self.sampleOrders[1] in self.exchange.bids.book)
-        self.assertTrue(self.sampleOrders[3] in self.exchange.bids.book)
-        self.assertTrue(self.sampleOrders[0] in self.exchange.bids.book)
-        self.assertTrue(self.sampleOrders[2] in self.exchange.asks.book)
+        self.market.addOrders(list(self.sampleOrders.values()))
+        self.assertTrue(self.sampleOrders[1] in self.market.bids.book)
+        self.assertTrue(self.sampleOrders[3] in self.market.bids.book)
+        self.assertTrue(self.sampleOrders[0] in self.market.bids.book)
+        self.assertTrue(self.sampleOrders[2] in self.market.asks.book)
 
     def test_FullOrder(self):
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[3], "apple",  100, 1, orderType="ask"))
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[4], "apple",  100, 1, orderType="ask"))
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[3], "apple",  100, 2, orderType="bid"))
-        self.assertTrue(self.exchange.asks.book.is_empty())
-        self.assertTrue(self.exchange.bids.book.is_empty())
+        self.assertTrue(self.market.asks.book.is_empty())
+        self.assertTrue(self.market.bids.book.is_empty())
 
     def test_PartialOrder(self):
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[3], "apple",  100, 10, orderType="ask"))
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[3], "apple",  100, 15, orderType="bid"))
-        self.assertTrue(self.exchange.bids.book.__len__() == 1)
-        self.assertTrue(self.exchange.bids.getBest().quantity == 5)
-        self.assertTrue(self.exchange.bids.getBest().price == 100)
-        self.assertTrue(self.exchange.asks.book.is_empty())
+        self.assertTrue(self.market.bids.book.__len__() == 1)
+        self.assertTrue(self.market.bids.getBest().quantity == 5)
+        self.assertTrue(self.market.bids.getBest().price == 100)
+        self.assertTrue(self.market.asks.book.is_empty())
 
     def test_removeAllAgentOrders(self):
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[4], "apple", 101, 100, orderType="ask"))
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[3], "apple", 100, 15, orderType="bid"))
-        self.assertTrue(self.exchange.asks.size() == 1)
-        self.assertTrue(self.exchange.bids.size() == 1)
-        self.exchange.removeAllAgentOrders(self.fakeAgents[4])
-        self.assertTrue(self.exchange.asks.size() == 0)
-        self.assertTrue(self.exchange.bids.size() == 1)
-        self.exchange.removeAllAgentOrders(self.fakeAgents[3])
-        self.assertTrue(self.exchange.asks.size() == 0)
-        self.assertTrue(self.exchange.bids.size() == 0)
+        self.assertTrue(self.market.asks.size() == 1)
+        self.assertTrue(self.market.bids.size() == 1)
+        self.market.removeAllAgentOrders(self.fakeAgents[4])
+        self.assertTrue(self.market.asks.size() == 0)
+        self.assertTrue(self.market.bids.size() == 1)
+        self.market.removeAllAgentOrders(self.fakeAgents[3])
+        self.assertTrue(self.market.asks.size() == 0)
+        self.assertTrue(self.market.bids.size() == 0)
 
     def test_FullSplitOrder(self):
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[3], "apple", 100, 10, orderType="ask"))
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[4], "apple", 100, 10, orderType="ask"))
-        self.exchange.addOrder(
+        self.market.addOrder(
             Order(self.fakeAgents[3], "apple", 100, 15, orderType="bid"))
-        self.assertTrue(self.exchange.asks.book.__len__() == 1)
-        self.assertTrue(self.exchange.asks.getBest().quantity == 5)
-        self.assertTrue(self.exchange.asks.getBest().price == 100)
-        self.assertTrue(self.exchange.bids.book.is_empty())
+        self.assertTrue(self.market.asks.book.__len__() == 1)
+        self.assertTrue(self.market.asks.getBest().quantity == 5)
+        self.assertTrue(self.market.asks.getBest().price == 100)
+        self.assertTrue(self.market.bids.book.is_empty())
 
 if __name__ == '__main__':
     unittest.main()

@@ -32,9 +32,9 @@ def generateRandomSet():
 class TestAgent(unittest.TestCase):
 
     def setUp(self):
-        self.exchanges = Exchanges()
-        self.a = Agent(self.exchanges)
-        self.b = Agent(self.exchanges)
+        self.exchange = Exchange()
+        self.a = Agent(self.exchange)
+        self.b = Agent(self.exchange)
         self.a.utility.collection = HUNGRY_UTIL
         self.b.utility.collection = THIRSTY_UTIL
 
@@ -70,16 +70,15 @@ class TestAgent(unittest.TestCase):
         self.a.removeInv("orange", 5)
         self.assertTrue(self.a.getInv("orange") == 0)
 
-    def test_removeExchanges(self):
+    def test_removeExchange(self):
         self.a.addInv("orange", 5)
-        self.assertTrue(len(self.a.exchanges.exchanges) == 7)
-        self.assertTrue(
-            self.a.exchanges.getExchange("orange").isEmpty() == False)
-        self.a.removeExchanges(self.exchanges)
-        self.assertTrue(self.a.exchanges == None)
-        self.assertTrue(self.exchanges.getExchange("orange").isEmpty() == True)
+        self.assertTrue(len(self.a.exchange.markets) == 7)
+        self.assertTrue(self.a.exchange.getMarket("orange").isEmpty() == False)
+        self.a.removeExchange(self.exchange)
+        self.assertTrue(self.a.exchange == None)
+        self.assertTrue(self.exchange.getMarket("orange").isEmpty() == True)
 
-    def test_addExchanges(self):
-        self.a.removeExchanges(self.exchanges)
+    def test_addExchange(self):
+        self.a.removeExchange(self.exchange)
 
     # Test needed for flushing agent from marketl

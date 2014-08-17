@@ -1,6 +1,6 @@
 from loggingSetup import *
 from orderBook import OrderBook, Order
-from exchange import Exchange, Exchanges
+from exchange import Market, Exchange
 import random
 import operator
 import uuid
@@ -96,8 +96,8 @@ class Agent(object):
 
     """ Agent is basic market actor """
 
-    def __init__(self, exchanges=None, utility=None, inventory=None):
-        self.exchanges = exchanges
+    def __init__(self, exchange=None, utility=None, inventory=None):
+        self.exchange = exchange
         self.id = uuid.uuid4()
         self.utility = Utility(utility)
         self.inventory = Inventory()
@@ -129,30 +129,30 @@ class Agent(object):
         self.inventory.printFull()
         print "\n\n"
 
-    """ introduceExchanges gives the agent access to a new exchanges and puts the agents goods for sale on its exchanges """
+    """ introduceExchange gives the agent access to a new exchange and puts the agents goods for sale on its markets """
 
-    def introduceExchanges(self, exchanges):
-        if self.exchanges != None:  # can only have one set of exchanges
-            self.removeExchanges(self.exchanges)
-        self.exchanges = exchanges
+    def introduceExchange(self, exchange):
+        if self.exchange != None:  # can only have one exchange
+            self.removeExchange(self.exchange)
+        self.exchange = exchange
         for good in self.inventory.goods():
-            exchange = self.exchanges.getExchange(good)
+            market = self.exchange.getMarket(good)
             orderToAdd = Order(
                 self, good, self.getUtility(good), self.getInv(good))
-            self.exchange.addOrder(orderToAdd)
+            self.market.addOrder(orderToAdd)
 
-    """ removeExchanges makes an agent no longer able to access those exchanges and removes all of the agent's orders from those exchanges """
+    """ removeExchange makes an agent no longer able to access that exchange and removes all of the agent's orders from those markets """
 
-    def removeExchanges(self, exchanges):
-        if (self.exchanges != exchanges):
-            # Assumes Agent can only access one exchanges
+    def removeExchange(self, exchange):
+        if (self.exchange != exchange):
+            # Assumes Agent can only access one exchange
             logging.warning(
                 "Tried to remove an exchange from an agent that does not have access to this exchange")
-        for exchange in exchanges.exchanges.values():
+        for market in exchange.markets.values():
             logging.debug(
-                "Removing orders for an agent from " + exchange.good + " exchange")
-            exchange.removeAllAgentOrders(self)
-        self.exchanges = None
+                "Removing orders for an agent from " + market.good + " market")
+            market.removeAllAgentOrders(self)
+        self.exchange = None
 
     def getUtility(self, good):
         return self.utility.getValue(good)
@@ -163,7 +163,7 @@ class Agent(object):
         return self.inventory.getValue(good)
 
     """ addInv adds a good to the agent's inventory. It also adds the order to the the
-        releveant exchange if addToExchange is true. addToExchange should almost always be
+        releveant market if addToExchange is true. addToExchange should almost always be
         true """
 
     def addInv(self, good, quantity, addToExchange=True):
@@ -171,12 +171,12 @@ class Agent(object):
             raise InventoryException(
                 "Tried to add a negative quantity of " + good)
         self.inventory.modifyValue(good, quantity)
-        if addToExchange and good != "money" and self.exchanges != None:
-            exchange = self.exchanges.getExchange(good)
-            if exchange != None:
+        if addToExchange and good != "money" and self.exchange != None:
+            market = self.exchange.getMarket(good)
+            if market != None:
                 order = Order(
                     self, good, self.getUtility(good) + 1, quantity, orderType="ask")
-                exchange.addOrder(order)
+                market.addOrder(order)
 
     def removeInv(self, good, quantity):
         if quantity < 0:

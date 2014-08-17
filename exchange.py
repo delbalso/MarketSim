@@ -2,14 +2,14 @@ from orderBook import Order, OrderBook
 from loggingSetup import *
 
 
-class Exchange:
+class Market:
 
     def __init__(self, good):
         self.good = good
         self.bids = OrderBook(good, orderType="bid")
         self.asks = OrderBook(good, orderType="ask")
 
-    """ Given an orderType/bookType string, return this exchange's corresponding book.
+    """ Given an orderType/bookType string, return this market's corresponding book.
     Return the opposing book if reverse set to True """
 
     def getBook(self, bookType, reverse=False):
@@ -26,14 +26,14 @@ class Exchange:
     def addOrders(self, orders):
         for order in orders:
             self.addOrder(order)
-    """ Place an order on the exchange. If the order can be met, perform whatever trades needed to
+    """ Place an order on the market. If the order can be met, perform whatever trades needed to
         meet the order """
 
     def addOrder(self, order):
-        logging.debug("Exchange.addOrder. id: " + str(order.agent.id) + ", good: " + order.good + ", orderType: " +
+        logging.debug("Market.addOrder. id: " + str(order.agent.id) + ", good: " + order.good + ", orderType: " +
                       order.orderType + ", price: " + str(order.price) + ", quantity: " + str(order.quantity))
         assert order.good == self.good, "Tried to add the incorrect type of good"
-        # We don't want an exchange for money
+        # We don't want a market for money
         assert order.good != "money", "Tried to add an order for money"
         # The book to which this order is intended to be added
         destinationBook = self.getBook(order.orderType)
@@ -46,14 +46,14 @@ class Exchange:
 
         return tradeOccurred
 
-    """ removeAllAgentOrders deletes all orders from agent from this exchange """
+    """ removeAllAgentOrders deletes all orders from agent from this market """
 
     def removeAllAgentOrders(self, agent):
         self.asks.removeAllAgentOrders(agent)
         self.bids.removeAllAgentOrders(agent)
         self.settle()
 
-    """ settle executes any possible trades given the exchange's orderbooks. It recursively calls itself until all possible trades are made """
+    """ settle executes any possible trades given the market's orderbooks. It recursively calls itself until all possible trades are made """
 
     def settle(self):
         bestAsk = self.asks.getBest()
@@ -102,7 +102,7 @@ class Exchange:
         else:
             return False
 
-    """ Print the current state of the exchange """
+    """ Print the current state of the market """
 
     def printBooks(self):
         print "*** Asks ***"
@@ -113,22 +113,25 @@ class Exchange:
 ALL_GOODS = ["apple", "banana", "orange", "water", "land", "clothes", "money"]
 
 
-class Exchanges:
+""" Exchange is a group of markets that can be accessesed together """
+
+
+class Exchange:
 
     def __init__(self):
-        self.exchanges = {}
+        self.markets = {}
         for good in ALL_GOODS:
-            self.exchanges[good] = Exchange(good)
+            self.markets[good] = Market(good)
 
-    def getExchange(self, good):
-        if not self.exchanges.has_key(good):
+    def getMarket(self, good):
+        if not self.markets.has_key(good):
             return None
-        return self.exchanges[good]
+        return self.markets[good]
 
-    """ goodsTraded returns a list of all goods traded by all the markets in this group of exchanges """
+    """ goodsTraded returns a list of all goods traded by all the markets by this exchange"""
 
     def goodsTraded(self):
         goods = []
-        for exchange in self.exchanges:
-            goods.append(exchange.good)
+        for market in self.markets:
+            goods.append(market.good)
         return goods
