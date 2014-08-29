@@ -1,5 +1,5 @@
 from loggingSetup import *
-from orderBook import OrderBook, Order
+from orderBook import *
 from exchange import Market, Exchange
 import random
 import operator
@@ -96,11 +96,13 @@ class Agent(object):
 
     """ Agent is basic market actor """
 
-    def __init__(self, exchange=None, utility=None, inventory=None):
-        self.exchange = exchange
+    def __init__(self, utility=None, inventory=None, location=None):
         self.id = uuid.uuid4()
         self.utility = Utility(utility)
         self.inventory = Inventory()
+        self.location = None
+        self.exchange = None
+        self.setLocation(location)
         if inventory != None:
             for good in inventory.goods():
                 self.addInv(good, inventory.getValue(good))
@@ -111,6 +113,22 @@ class Agent(object):
 
     def getWealth(self):
         return self.appraise(self.inventory)
+
+    """ setLocation sets where this agent is. It calls methods in Location to update that location's population and updates this agent's exchanges with the exchange that is found in the location being set """
+
+    def setLocation(self, location):
+        assert self.location == None or self in self.location.population
+        if self.location != None:
+            self.location.removeAgent(self)
+        self.location = location
+        if self.location != None:
+            location.addAgent(self)
+        self.removeExchange(self.exchange)
+        if self.location != None:
+            self.introduceExchange(self.location.exchange)
+
+    def getLocation(self):
+        return self.location
 
     """ appraise returns the value of goods (a collection of goods) according to this agent's utility"""
 
@@ -123,9 +141,10 @@ class Agent(object):
     """Prints all members of an agent"""
 
     def printAgent(self):
-        print "*** Utility ***"
+        print "Agent: " + str(self.id)
+        print "---Utility"
         self.utility.printFull()
-        print "*** Inventory ***"
+        print "---Inventory"
         self.inventory.printFull()
         print "\n\n"
 
@@ -136,14 +155,17 @@ class Agent(object):
             self.removeExchange(self.exchange)
         self.exchange = exchange
         for good in self.inventory.goods():
-            market = self.exchange.getMarket(good)
-            orderToAdd = Order(
-                self, good, self.getUtility(good), self.getInv(good))
-            self.market.addOrder(orderToAdd)
+            if good != "money":
+                market = self.exchange.getMarket(good)
+                orderToAdd = Order(
+                    self, good, self.getUtility(good) + 1, self.getInv(good), ASK_ORDER)
+                market.addOrder(orderToAdd)
 
     """ removeExchange makes an agent no longer able to access that exchange and removes all of the agent's orders from those markets """
 
     def removeExchange(self, exchange):
+        if exchange == None:
+            return
         if (self.exchange != exchange):
             # Assumes Agent can only access one exchange
             logging.warning(
@@ -175,7 +197,7 @@ class Agent(object):
             market = self.exchange.getMarket(good)
             if market != None:
                 order = Order(
-                    self, good, self.getUtility(good) + 1, quantity, orderType="ask")
+                    self, good, self.getUtility(good) + 1, quantity, orderType=ASK_ORDER)
                 market.addOrder(order)
 
     def removeInv(self, good, quantity):

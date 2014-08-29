@@ -16,7 +16,7 @@ class Order:
             newOrder.quantity = quantity
         return newOrder
 
-    def __init__(self, agent, good, price, quantity, orderType="bid", time=time.time()):
+    def __init__(self, agent, good, price, quantity, orderType, time=time.time()):
         assert price >= 0, "Order can't have a negative price"
         self.agent = agent
         self.price = price
@@ -39,23 +39,26 @@ class Order:
         if self.price < other.price:
             return True
         if self.price == other.price:
-            if (self.orderType == "bid" and self.orderTime > other.orderTime):
+            if (self.orderType == BID_ORDER and self.orderTime > other.orderTime):
                 return True
-            if (self.orderType == "ask" and self.orderTime < other.orderTime):
+            if (self.orderType == ASK_ORDER and self.orderTime < other.orderTime):
                 return True
         return False
 
     def printOrder(self):
-        print "agent: " + str(self.agent)
+        print "agent: " + str(self.agent.id)
         print "price: " + str(self.price)
         print "quantity: " + str(self.quantity)
         print "orderType: " + str(self.orderType)
         print "orderTime: " + str(self.orderTime)
 
+BID_ORDER = "BID_ORDER"
+ASK_ORDER = "ASK_ORDER"
+
 
 class OrderBook:
 
-    def __init__(self, good, orderType="bid"):
+    def __init__(self, good, orderType=BID_ORDER):
         self.book = RBTree()
         self.orderType = orderType
         self.good = good
@@ -65,7 +68,7 @@ class OrderBook:
     def getBest(self):
         if len(self.book) == 0:
             return None
-        if self.orderType == "bid":
+        if self.orderType == BID_ORDER:
             return self.book.max_key()
         else:
             return self.book.min_key()
@@ -83,7 +86,7 @@ class OrderBook:
     """ getNext returns the next order to be executed (as determined by price and time) """
 
     def getNext(self, order):
-        if self.orderType == "bid":
+        if self.orderType == BID_ORDER:
             return self.book.prev_key(order)
         else:
             return self.book.succ_key(order)
@@ -113,11 +116,11 @@ class OrderBook:
         quantity = 0
         orders = []
         canMeet = None  # represents whether this orderbook can meet the order
-        for order in self.book.keys(reverse=(self.orderType == "bid")):
+        for order in self.book.keys(reverse=(self.orderType == BID_ORDER)):
             if quantity >= orderToMatch.quantity:
                 break
-            if ((order.price < orderToMatch.price and self.orderType == "bid") or
-                    (order.price > orderToMatch.price and self.orderType == "ask")):
+            if ((order.price < orderToMatch.price and self.orderType == BID_ORDER) or
+                    (order.price > orderToMatch.price and self.orderType == ASK_ORDER)):
                 break
             quantity += order.quantity
             if quantity > orderToMatch.quantity:

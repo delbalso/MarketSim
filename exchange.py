@@ -1,4 +1,4 @@
-from orderBook import Order, OrderBook
+from orderBook import *
 from loggingSetup import *
 
 
@@ -6,16 +6,23 @@ class Market:
 
     def __init__(self, good):
         self.good = good
-        self.bids = OrderBook(good, orderType="bid")
-        self.asks = OrderBook(good, orderType="ask")
+        self.bids = OrderBook(good, orderType=BID_ORDER)
+        self.asks = OrderBook(good, orderType=ASK_ORDER)
+
+    def printMarket(self):
+        print "Market for " + self.good
+        print "---Asks---"
+        self.asks.printBook()
+        print "---Bids---"
+        self.bids.printBook()
 
     """ Given an orderType/bookType string, return this market's corresponding book.
     Return the opposing book if reverse set to True """
 
     def getBook(self, bookType, reverse=False):
         assert bookType in [
-            "ask", "bid"], "Tried to add incorrect type of order to book"
-        if ((bookType == "ask") != reverse):
+            ASK_ORDER, BID_ORDER], "Tried to add incorrect type of order to book"
+        if ((bookType == ASK_ORDER) != reverse):
             return self.asks
         else:
             return self.bids

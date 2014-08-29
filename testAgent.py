@@ -33,8 +33,10 @@ class TestAgent(unittest.TestCase):
 
     def setUp(self):
         self.exchange = Exchange()
-        self.a = Agent(self.exchange)
-        self.b = Agent(self.exchange)
+        self.a = Agent()
+        self.a.introduceExchange(self.exchange)
+        self.b = Agent()
+        self.b.introduceExchange(self.exchange)
         self.a.utility.collection = HUNGRY_UTIL
         self.b.utility.collection = THIRSTY_UTIL
 
