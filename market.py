@@ -1,68 +1,32 @@
 from itertools import *
+from world import *
 from agent import *
-from agentManage import *
+from agentManager import *
 from orderBook import *
-import argparse
+from location import *
+from loggingSetup import *
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-v', default=0, type=int)
-args = parser.parse_args()
-__VERBOSE__=args.v
+def cycle(world):
+    world.logWorldWealth(includeAgents=True)
+    world.time = world.time + 1
 
-""" Have each possible pair of the given agents attempts to trade in a fixed order """
-def tradeRound(agents):
-    trading_order = list(combinations(range(len(agents)),2))
-    for agent_index, partner_index in trading_order:
-        agent = agents[agent_index]
-        partner = agents[partner_index]
-
-        old_wealth = agent.getWealth() + partner.getWealth()
-
-        trade_successful = agent.seriesTrade(partner)
-        if (__VERBOSE__>1 and trade_successful):
-            print "Trade successful between agents, ", agent_index, " and ", partner_index, ". Wealth +", (agent.getWealth() + partner.getWealth() - old_wealth)
-
-""" Run numRounds rounds of trades. If tradeUntilComplete is true, then keep running trade rounds until total wealth convergence (i.e. incremental wealth increase <1) """
-def runSetOfTradeRounds(agents, numRounds=1, tradeUntilComplete=False):
-    complete = False
-    roundsTraded = 0
-
-    while ((roundsTraded<numRounds and tradeUntilComplete==False) or
-        (complete == False and tradeUntilComplete==True)):
-        if tradeUntilComplete:
-            oldTotalWealth = sum(agent.getWealth() for agent in agents)
-        tradeRound(agents)
-        if (__VERBOSE__>1):
-            print "Round ", roundsTraded, " of trading complete. New wealth is: ", sum(agent.getWealth() for agent in agents)
-        if tradeUntilComplete:
-            newTotalWealth = sum(agent.getWealth() for agent in agents)
-            complete = (newTotalWealth - oldTotalWealth < 1)
-        roundsTraded += 1
-    return roundsTraded
-
-def vprint (verbosity, message):
-    if (__VERBOSE__>=verbosity):
-        print message
+def worldSetup():
+    USA = Location()
+    USA.exchange = Exchange()
+    China = Location()
+    China.exchange = Exchange()
+    world = World()
+    world.countries.append(USA)
+    world.countries.append(China)
+    return world
 
 def __main__():
-    """for i in xrange (100):
-        # Make a few agents
-        agents=createAndPopulateRandomAgents(15)
+    world = worldSetup()
+    # Make a few agents
+    agents=createAndPopulateRandomAgents(15, world)
 
-        #print current stats
-        #print list(agent.getWealth() for agent in agents)
-        #print "Total wealth: ", Agent.getTotalWealth(agents)
-
-        #trade a bit
-        beginning_wealth = Agent.getTotalWealth(agents)
-        roundsTraded = runSetOfTradeRounds(agents, tradeUntilComplete=True)
-        end_wealth = Agent.getTotalWealth(agents)
-        #print "Total wealth: ", end_wealth
-        wealthIncrease =  100*(float(end_wealth)/beginning_wealth-1)
-        print roundsTraded, " - ", wealthIncrease,"%"
-"""
-
-
+    while world.time<100:
+        cycle(world)
 
 __main__()
 

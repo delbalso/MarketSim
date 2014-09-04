@@ -4,18 +4,18 @@ ALL_GOODS = ["apple", "banana", "orange", "water", "land", "clothes", "money"]
 """ Generate n random market agents """
 
 
-def createAndPopulateRandomAgents(numAgents, wealth=None):
+def createAndPopulateRandomAgents(numAgents, world, wealth=None):
     agents = list()
     for i in xrange(numAgents):
         agents.append(Agent(None))
-        assignRandomStats(agents[i], wealth=wealth)
+        assignRandomStats(agents[i], world, wealth=wealth)
 
     return agents
 
 """ assignRandomStats gives an agent random stats with a wealth (according to the appraisal of the utility assigned by this function) of wealth """
 
 
-def assignRandomStats(agent, inventory=None, utility=None, wealth=None):
+def assignRandomStats(agent, world, inventory=None, utility=None, wealth=None):
     agent.utility.empty()
     agent.inventory.empty()
     if (utility == None):
@@ -34,6 +34,7 @@ def assignRandomStats(agent, inventory=None, utility=None, wealth=None):
                     agent.removeInv(good,  - count * adjustmentFactor + count)
     logging.debug("Assigned agent " + str(agent.id) +
                   " random stats with a wealth of " + str(agent.getWealth()))
+    agent.setLocation(random.choice(world.countries))
 
 """ generateRandomSet generates a set of random goods in random quantities """
 

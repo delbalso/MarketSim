@@ -116,10 +116,11 @@ class Agent(object):
 
     """ setLocation sets where this agent is. It calls methods in Location to update that location's population and updates this agent's exchanges with the exchange that is found in the location being set """
 
-    def setLocation(self, location):
+    def setLocation(self, location, world=None):
         assert self.location == None or self in self.location.population
         if self.location != None:
             self.location.removeAgent(self)
+            assert self not in self.location.population
         self.location = location
         if self.location != None:
             location.addAgent(self)
