@@ -98,6 +98,8 @@ class Agent(object):
 
     def __init__(self, utility=None, inventory=None, location=None):
         self.id = uuid.uuid4()
+        self.logger = newLogger("agent", self.id)
+        self.logger.info("Agent created")
         self.utility = Utility(utility)
         self.inventory = Inventory()
         self.location = None
@@ -117,6 +119,7 @@ class Agent(object):
     """ setLocation sets where this agent is. It calls methods in Location to update that location's population and updates this agent's exchanges with the exchange that is found in the location being set """
 
     def setLocation(self, location, world=None):
+        self.logger.info("Setting new location")
         assert self.location == None or self in self.location.population
         if self.location != None:
             self.location.removeAgent(self)
@@ -169,10 +172,10 @@ class Agent(object):
             return
         if (self.exchange != exchange):
             # Assumes Agent can only access one exchange
-            logging.warning(
+            self.logger.warning(
                 "Tried to remove an exchange from an agent that does not have access to this exchange")
         for market in exchange.markets.values():
-            logging.debug(
+            self.logger.debug(
                 "Removing orders for an agent from " + market.good + " market")
             market.removeAllAgentOrders(self)
         self.exchange = None

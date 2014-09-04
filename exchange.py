@@ -1,3 +1,4 @@
+import uuid
 from orderBook import *
 from loggingSetup import *
 
@@ -5,6 +6,9 @@ from loggingSetup import *
 class Market:
 
     def __init__(self, good):
+        self.id = uuid.uuid4()
+        self.logger = newLogger("market", self.id)
+        self.logger.info("Market created")
         self.good = good
         self.bids = OrderBook(good, orderType=BID_ORDER)
         self.asks = OrderBook(good, orderType=ASK_ORDER)
@@ -37,8 +41,8 @@ class Market:
         meet the order """
 
     def addOrder(self, order):
-        logging.debug("Market.addOrder. id: " + str(order.agent.id) + ", good: " + order.good + ", orderType: " +
-                      order.orderType + ", price: " + str(order.price) + ", quantity: " + str(order.quantity))
+        self.logger.debug("Market.addOrder. id: " + str(order.agent.id) + ", good: " + order.good + ", orderType: " +
+                          order.orderType + ", price: " + str(order.price) + ", quantity: " + str(order.quantity))
         assert order.good == self.good, "Tried to add the incorrect type of good"
         # We don't want a market for money
         assert order.good != "money", "Tried to add an order for money"
@@ -97,8 +101,8 @@ class Market:
             else:  # The quantity is the exact size of the order
                 self.bids.removeOrder(bestBid)
 
-            logging.debug("Trade: " + str(bestAsk.agent.id) + " --> " + str(bestBid.agent.id) + ", for good: " + self.good +
-                          ", price: " + str(price) + ", quantity: " + str(quantity) + ", money exchanged = " + str(price * quantity))
+            self.logger.debug("Trade: " + str(bestAsk.agent.id) + " --> " + str(bestBid.agent.id) + ", for good: " + self.good +
+                              ", price: " + str(price) + ", quantity: " + str(quantity) + ", money exchanged = " + str(price * quantity))
 
             # Adjust the participating agent's inventories
             bestAsk.agent.removeInv(self.good, quantity)
@@ -126,6 +130,9 @@ ALL_GOODS = ["apple", "banana", "orange", "water", "land", "clothes", "money"]
 class Exchange:
 
     def __init__(self):
+        self.id = uuid.uuid4()
+        self.logger = newLogger("exchange", self.id)
+        self.logger.info("Exchange created")
         self.markets = {}
         for good in ALL_GOODS:
             self.markets[good] = Market(good)
@@ -135,7 +142,7 @@ class Exchange:
             return None
         return self.markets[good]
 
-    """ goodsTraded returns a list of all goods traded by all the markets by this exchange"""
+    """ goodsTraded returns a list of all goods (i.e. "apple", not specific inventory) that are traded on all the markets by this exchange"""
 
     def goodsTraded(self):
         goods = []
