@@ -51,6 +51,14 @@ class TestAgent(unittest.TestCase):
 
         self.assertTrue(Agent.getTotalWealth([self.a, self.b]) == 145)
 
+    def test_logCreated(self):
+        import os
+        filename = "/tmp/marketsim/agent/" + str(self.a.id) + ".log"
+        self.assertTrue(os.path.isfile(filename))
+        infile = open(filename, 'r')
+        firstLine = infile.readline()
+        self.assertTrue(firstLine == "Agent created\n")
+
     def test_errorWhenRemovingTooMany(self):
         self.a.addInv("orange", 5)
         self.assertRaises(InventoryException, self.a.removeInv, "orange", 6)
